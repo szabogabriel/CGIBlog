@@ -1,0 +1,5 @@
+{{>html_start.template}}
+{{>navbar.template}}
+{{DATA}}
+{{#ENTRIES}}<a href="index?DIR={{DIR}}&ENTRY={{.}}">{{.}}</a><br/>{{/ENTRIES}}
+{{>html_end.template}}

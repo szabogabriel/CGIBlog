@@ -1,0 +1,105 @@
+#!/bin/bash
+
+readonly contentDir=/var/www/html
+readonly imageDir=${contentDir}/images
+readonly rootdir=$(pwd)/cgi-bin
+readonly templatedir=${rootdir}/templates
+
+source ./mo
+
+function render {
+  cat ${templatedir}/$1 | mo
+}
+
+function setDirs {
+  TOPICS=()
+  for i in $(ls -d $contentDir/*/ | grep -v images); do
+    dname=$(basename $i)
+    TOPICS+=($dname)
+  done
+  export TOPICS
+}
+
+function parseQueryString {
+  LDIR=$(echo $QUERY_STRING | tr '&' '\n' | grep DIR | tr '=' '\n' | tail -n 1)
+  LENTRY=$(echo $QUERY_STRING | tr '&' '\n' | grep ENTRY | tr '=' '\n' | tail -n 1)
+  LABOUT=$(echo $QUERY_STRING | grep ABOUT | wc -l)
+  LIMAGE=$(echo $QUERY_STRING | grep IMAGE | tr '=' '\n' | tail -n 1)
+}
+
+function setContent {
+  if [[ $LABOUT == 1 ]]; then
+    export DATA="$(perl Markdown.pl --html4Tags $contentDir/about.md)"
+    return
+  fi
+  if [ -z $LDIR ]; then
+    export DATA="$(perl Markdown.pl --html4tags $contentDir/index.md)"
+    return
+  fi
+  export DIR=$LDIR
+  if [ -z $LENTRY ]; then
+    if [[ $LDIR == *".."* ]]; then
+      export DATA="Illegal argument"
+      return
+    fi
+    ENTRIES=()
+    for i in $(ls $contentDir/$LDIR | sort -r); do
+      fname=$(basename $i)
+      ENTRIES+=($fname)
+    done
+    export ENTRIES
+  else
+    if [[ $LENTRY == *".."* ]]; then
+      export DATA="Illegal argument."
+      return
+    fi
+    if [ -f $contentDir/$LDIR/$LENTRY ]; then
+      if [[ $LENTRY == *".md" ]]; then
+        export DATA=$(perl Markdown.pl --html4tags $contentDir/$LDIR/$LENTRY)
+      else
+        export DATA=$(cat $contentDir/$LDIR/$LENTRY)
+      fi
+    else
+      export DATA="Data $contentDir/$LDIR/$LENTRY not found."
+    fi
+  fi
+}
+
+function renderText {
+  echo "Content-type: text/html"
+  echo ""
+  export PAGE_TITLE="Index"
+  setDirs
+  setContent
+  render index.template
+}
+
+function renderImage {
+  if [[ $LIMAGE == *".."* ]]; then
+    return
+  fi
+  if  [ -f $imageDir/$LIMAGE ]; then
+    echo "Content-type: $(file --mime-type $imageDir/$LIMAGE | awk '{print $2}')"
+    echo ""
+    dd if=$imageDir/$LIMAGE
+  else
+    echo "Content-type: text/html"
+    echo ""
+    echo "Error when receiving data"
+  fi
+}
+
+function printData {
+  if [ -z $LIMAGE ]; then
+    renderText
+  else
+    renderImage
+  fi
+}
+
+function main {
+  parseQueryString
+  printData
+}
+
+main
