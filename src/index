@@ -1,6 +1,6 @@
 #!/bin/bash
 
-readonly contentDir=/var/www/html
+readonly contentDir=/var/www/html/entries
 readonly imageDir=${contentDir}/images
 readonly rootdir=$(pwd)/cgi-bin
 readonly templatedir=${rootdir}/templates
@@ -11,9 +11,13 @@ function render {
   cat ${templatedir}/$1 | mo
 }
 
+function renderMarkdown {
+  perl Markdown.pl --html4Tags $1
+}
+
 function setDirs {
   TOPICS=()
-  for i in $(ls -d $contentDir/*/ | grep -v images); do
+  for i in $(ls -d $contentDir/*/); do
     dname=$(basename $i)
     TOPICS+=($dname)
   done
@@ -29,11 +33,11 @@ function parseQueryString {
 
 function setContent {
   if [[ $LABOUT == 1 ]]; then
-    export DATA="$(perl Markdown.pl --html4Tags $contentDir/about.md)"
+    export DATA="$(renderMarkdown $contentDir/about.md)"
     return
   fi
   if [ -z $LDIR ]; then
-    export DATA="$(perl Markdown.pl --html4tags $contentDir/index.md)"
+    export DATA="$(renderMarkdown $contentDir/index.md)"
     return
   fi
   export DIR=$LDIR
@@ -55,7 +59,7 @@ function setContent {
     fi
     if [ -f $contentDir/$LDIR/$LENTRY ]; then
       if [[ $LENTRY == *".md" ]]; then
-        export DATA=$(perl Markdown.pl --html4tags $contentDir/$LDIR/$LENTRY)
+        export DATA=$(renderMarkdown $contentDir/$LDIR/$LENTRY | sed 's/<img /<img class="img-responsive" /g')
       else
         export DATA=$(cat $contentDir/$LDIR/$LENTRY)
       fi
@@ -83,7 +87,7 @@ function renderImage {
     echo ""
     dd if=$imageDir/$LIMAGE
   else
-    echo "Content-type: text/html"
+    echo "Content-type: text/plain"
     echo ""
     echo "Error when receiving data"
   fi
