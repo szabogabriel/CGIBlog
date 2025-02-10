@@ -4,8 +4,11 @@ readonly contentDir=/var/www/html/entries
 readonly imageDir=${contentDir}/images
 readonly rootdir=$(pwd)/cgi-bin
 readonly templatedir=${rootdir}/templates
+readonly cachedir=$rootdir/cache
 
 source ./mo
+
+hashedQuery=$(echo $QUERY_STRING | cksum | cut -f 1 -d ' ')
 
 function render {
   cat ${templatedir}/$1 | mo
@@ -75,7 +78,7 @@ function renderText {
   export PAGE_TITLE="Index"
   setDirs
   setContent
-  render index.template
+  render index.template | tee $cachedir/$hashedQuery
 }
 
 function renderImage {
@@ -102,8 +105,16 @@ function printData {
 }
 
 function main {
-  parseQueryString
-  printData
+  echo 1 > /sys/class/gpio/gpio11/value
+  if [ -f $cachedir/$hashedQuery ]; then
+    echo "Content-type: text/html"
+    echo ""
+    cat $cachedir/$hashedQuery
+  else
+    parseQueryString
+    printData
+  fi
+  echo 0 > /sys/class/gpio/gpio11/value
 }
 
 main
