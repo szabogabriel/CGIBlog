@@ -105,7 +105,7 @@ function printData {
 }
 
 function main {
-  echo 1 > /sys/class/gpio/gpio11/value
+  #echo 1 > /sys/class/gpio/gpio11/value
   if [ -f $cachedir/$hashedQuery ]; then
     echo "Content-type: text/html"
     echo ""
@@ -114,7 +114,7 @@ function main {
     parseQueryString
     printData
   fi
-  echo 0 > /sys/class/gpio/gpio11/value
+  #echo 0 > /sys/class/gpio/gpio11/value
 }
 
 main

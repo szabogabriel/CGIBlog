@@ -33,6 +33,10 @@ If both the DIR and the ENTRY attributes are set, it will render the given entry
 
 If the IMAGE attribute is set, then the file is looked up in the `images` folder and it is returned by using the `dd` command.
 
+There is a simple caching implemented, where it checks for the cached files. All the files rendered are written both to the stdout and to the cache directory. The name of the file is the hash of the QUERY_STRING used in the request.
+
+Since I am running this script on a Raspberry PI, I am also blinking an LED, when a request is done. The code is commented out in the main function.
+
 ## Tests
 
 Currently this blog is up and running as my personal blog engine. It serves well, wkthout any issues. It is paired with my CGI server, and I didn't have the capacity to test it with others servers like Apache or Lighttpd yet. But it should be running just fine.
@@ -42,6 +46,8 @@ Currently this blog is up and running as my personal blog engine. It serves well
 The script is very basic, and could be improved. It needs a bit of refactoring to make it more readable.
 
 It also provides only basic sanity check on input.
+
+Caching has no update, meaning it will return the version of the given file used, when creating the cached version. The cache must be manually cleared when updating an existing entry.
 
 Last but not least I am currently using absolute paths for the mustache templates and didn't checked whether it works with relative paths. Be aware, if you try to run this blog.
  
